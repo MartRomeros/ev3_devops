@@ -29,13 +29,21 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      # Cada imagen se sube con dos tags:
+      #   - SHA del commit  → trazabilidad exacta (demo)
+      #   - latest          → referencia estable para despliegues manuales
       - name: Build & push images
         env:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TAG: ${{ github.sha }}
         run: |
-          docker build -t $REGISTRY/ev3-lab-frontend:latest ./frontend
-          docker build -t $REGISTRY/ev3-lab-backend:latest  ./backend
-          docker build -t $REGISTRY/ev3-lab-db:latest       ./db
+          docker build -t $REGISTRY/ev3-lab-frontend:$TAG -t $REGISTRY/ev3-lab-frontend:latest ./frontend
+          docker build -t $REGISTRY/ev3-lab-backend:$TAG  -t $REGISTRY/ev3-lab-backend:latest  ./backend
+          docker build -t $REGISTRY/ev3-lab-db:$TAG       -t $REGISTRY/ev3-lab-db:latest       ./db
+
+          docker push $REGISTRY/ev3-lab-frontend:$TAG
           docker push $REGISTRY/ev3-lab-frontend:latest
+          docker push $REGISTRY/ev3-lab-backend:$TAG
           docker push $REGISTRY/ev3-lab-backend:latest
+          docker push $REGISTRY/ev3-lab-db:$TAG
           docker push $REGISTRY/ev3-lab-db:latest
