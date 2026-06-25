@@ -1,23 +1,28 @@
-name: CI/CD Prueba DevOps EV3
+name: CD — Deploy to EKS
 
 on:
-  push:
-    branches:
-      - master
+  # Se dispara automáticamente cuando CI termina con éxito
+  workflow_run:
+    workflows: ["CI — Build & Push"]
+    types:
+      - completed
+  # También permite disparo manual desde la pestaña Actions
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  cd:
-    name: Build → Push → Deploy
+  deploy:
+    name: Deploy to EKS
     runs-on: ubuntu-latest
+    # En workflow_run solo corre si CI pasó; en workflow_dispatch corre siempre
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - uses: actions/checkout@v4
 
-      # AWS Academy: credenciales temporales (~4h). Actualizar los tres secrets
-      # en GitHub → Settings → Secrets antes de cada sesión de laboratorio.
+      # AWS Academy: actualizar los tres secrets antes de cada sesión (~4h expiry)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -25,21 +30,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region:            us-east-1
-
-      - name: Login to ECR
-        id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build & push images
-        env:
-          REGISTRY: ${{ steps.ecr.outputs.registry }}
-        run: |
-          docker build -t $REGISTRY/ev3-lab-frontend:latest ./frontend
-          docker build -t $REGISTRY/ev3-lab-backend:latest  ./backend
-          docker build -t $REGISTRY/ev3-lab-db:latest       ./db
-          docker push $REGISTRY/ev3-lab-frontend:latest
-          docker push $REGISTRY/ev3-lab-backend:latest
-          docker push $REGISTRY/ev3-lab-db:latest
 
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
@@ -64,5 +54,5 @@ jobs:
         run: |
           kubectl rollout restart deployment tienda-backend  -n tienda
           kubectl rollout restart deployment tienda-frontend -n tienda
-          kubectl rollout status  deployment tienda-backend  -n tienda --timeout=120s
-          kubectl rollout status  deployment tienda-frontend -n tienda --timeout=120s
+          kubectl rollout status  deployment tienda-backend  -n tienda --timeout=300s
+          kubectl rollout status  deployment tienda-frontend -n tienda --timeout=300s

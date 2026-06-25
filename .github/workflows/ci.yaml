@@ -1,0 +1,41 @@
+name: CI — Build & Push
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build & Push to ECR
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # AWS Academy: actualizar los tres secrets antes de cada sesión (~4h expiry)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token:     ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region:            us-east-1
+
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push images
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          docker build -t $REGISTRY/ev3-lab-frontend:latest ./frontend
+          docker build -t $REGISTRY/ev3-lab-backend:latest  ./backend
+          docker build -t $REGISTRY/ev3-lab-db:latest       ./db
+          docker push $REGISTRY/ev3-lab-frontend:latest
+          docker push $REGISTRY/ev3-lab-backend:latest
+          docker push $REGISTRY/ev3-lab-db:latest
