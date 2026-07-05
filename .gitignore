@@ -1,5 +1,2 @@
-.claude/
-.kiro/
-CLAUDE.md
-terraform/
 node_modules/
+.env

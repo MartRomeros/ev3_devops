@@ -162,7 +162,7 @@ describe("Crear producto", () => {
     await flushPromises();
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://localhost:3001/api/productos",
+      "/api/productos",
       expect.objectContaining({ method: "POST" })
     );
   });

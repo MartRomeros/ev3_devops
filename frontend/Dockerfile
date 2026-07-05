@@ -1,11 +1,25 @@
-FROM nginx:alpine
+#STAGE BASE: dependencias declaradas
+FROM node:18-alpine AS base
+WORKDIR /app
+COPY package.json package-lock.json ./
 
-# Copiar configuraciÛn de NGINX
+#STAGE DE TEST: instala jest/jsdom y corre la suite sobre app.js.
+# Si un test falla, RUN npm test rompe el build completo.
+FROM base AS test
+RUN npm ci
+COPY app.js ./
+COPY tests ./tests
+RUN npm test
+
+#STAGE CREACION DE IMAGEN: solo NGINX sirviendo est√°ticos, sin Node ni tests
+FROM nginx:alpine AS runtime
+
+# Copiar configuraci√≥n de NGINX
 COPY default.conf /etc/nginx/conf.d/default.conf
 
-# Copiar archivos est·ticos
+# Copiar archivos est√°ticos (app.js viene del stage test ya validado)
 COPY index.html /usr/share/nginx/html/
-COPY app.js /usr/share/nginx/html/
+COPY --from=test /app/app.js /usr/share/nginx/html/app.js
 
 EXPOSE 80
 
