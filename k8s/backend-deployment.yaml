@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: 191521922111.dkr.ecr.us-east-1.amazonaws.com/ev3-lab-backend:latest # Colocar uri de tu imagen en ECR
+          image: 811745260722.dkr.ecr.us-east-1.amazonaws.com/eks-lab-ev3-backend:latest # Colocar uri de tu imagen en ECR
           ports:
             - containerPort: 3001
           env:
@@ -33,7 +33,7 @@ spec:
             - name: DB_PORT
               value: "3306"
 
-          # Se agrega Resource para que Metrics Server calcule el % de CPU y Memoria para escalar 
+          # Se agrega Resource para que Metrics Server calcule el % de CPU y Memoria para escalar
           resources:
             requests:
               cpu: "100m"

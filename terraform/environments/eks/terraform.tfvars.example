@@ -1,0 +1,6 @@
+project_name = "intro_devops"
+owner_name   = "Francisco Briones"
+environment  = "dev"
+
+cluster_iam_role_arn = "arn:aws:iam::<account_id>:role/<LabEKSClusterRole>"
+node_iam_role_arn    = "arn:aws:iam::<account_id>:role/<LabEKSNodeRole>"

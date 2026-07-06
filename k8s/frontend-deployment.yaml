@@ -15,11 +15,11 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: 191521922111.dkr.ecr.us-east-1.amazonaws.com/ev3-lab-frontend:latest # Colocar uri de tu imagen en ECR
+          image: 811745260722.dkr.ecr.us-east-1.amazonaws.com/eks-lab-ev3-frontend:latest # Colocar uri de tu imagen en ECR
           ports:
             - containerPort: 80
 
-          # Se agrega Resource para que Metrics Server calcule el % de CPU y Memoria para escalar 
+          # Se agrega Resource para que Metrics Server calcule el % de CPU y Memoria para escalar
           resources:
             requests:
               cpu: "50m"
@@ -42,4 +42,3 @@ spec:
               port: 80
             initialDelaySeconds: 10
             periodSeconds: 10
-
