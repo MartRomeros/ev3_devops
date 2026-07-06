@@ -37,13 +37,13 @@ jobs:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
           TAG: ${{ github.sha }}
         run: |
-          docker build -t $REGISTRY/ev3-lab-frontend:$TAG -t $REGISTRY/ev3-lab-frontend:latest ./frontend
-          docker build -t $REGISTRY/ev3-lab-backend:$TAG  -t $REGISTRY/ev3-lab-backend:latest  ./backend
-          docker build -t $REGISTRY/ev3-lab-db:$TAG       -t $REGISTRY/ev3-lab-db:latest       ./db
+          docker build -t $REGISTRY/eks-lab-ev3-frontend:$TAG -t $REGISTRY/eks-lab-ev3-frontend:latest ./frontend
+          docker build -t $REGISTRY/eks-lab-ev3-backend:$TAG  -t $REGISTRY/eks-lab-ev3-backend:latest  ./backend
+          docker build -t $REGISTRY/eks-lab-ev3-db:$TAG       -t $REGISTRY/eks-lab-ev3-db:latest       ./db
 
-          docker push $REGISTRY/ev3-lab-frontend:$TAG
-          docker push $REGISTRY/ev3-lab-frontend:latest
-          docker push $REGISTRY/ev3-lab-backend:$TAG
-          docker push $REGISTRY/ev3-lab-backend:latest
-          docker push $REGISTRY/ev3-lab-db:$TAG
-          docker push $REGISTRY/ev3-lab-db:latest
+          docker push $REGISTRY/eks-lab-ev3-frontend:$TAG
+          docker push $REGISTRY/eks-lab-ev3-frontend:latest
+          docker push $REGISTRY/eks-lab-ev3-backend:$TAG
+          docker push $REGISTRY/eks-lab-ev3-backend:latest
+          docker push $REGISTRY/eks-lab-ev3-db:$TAG
+          docker push $REGISTRY/eks-lab-ev3-db:latest
