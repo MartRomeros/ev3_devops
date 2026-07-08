@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mysql-init
+  namespace: tienda
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: mysql-init
+          image: mysql:8
+          command:
+            - sh
+            - -c
+            - mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" < /scripts/init.sql
+          env:
+            - name: DB_HOST
+              value: "eks-lab-ev3-db.cubb9kptvp28.us-east-1.rds.amazonaws.com" # Salida 'rds_address' de terraform apply
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rds-secret
+                  key: DB_USERNAME
+            - name: MYSQL_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: rds-secret
+                  key: DB_PASSWORD
+          volumeMounts:
+            - name: init-script
+              mountPath: /scripts
+      volumes:
+        - name: init-script
+          configMap:
+            name: mysql-init-script

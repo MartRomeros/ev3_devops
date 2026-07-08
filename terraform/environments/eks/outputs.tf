@@ -22,3 +22,23 @@ output "frontend_service_lookup" {
   description = "Command to inspect the public Kubernetes Service."
   value       = "kubectl get svc tienda-frontend -n tienda"
 }
+
+output "rds_address" {
+  description = "RDS MySQL host address (no port). Use this for DB_HOST in k8s/backend-deployment.yaml and k8s/mysql-init-job.yaml."
+  value       = aws_db_instance.this.address
+}
+
+output "rds_endpoint" {
+  description = "RDS MySQL connection endpoint (host:port)."
+  value       = aws_db_instance.this.endpoint
+}
+
+output "rds_port" {
+  description = "RDS MySQL port."
+  value       = aws_db_instance.this.port
+}
+
+output "rds_database_name" {
+  description = "Initial database name created on the RDS instance."
+  value       = aws_db_instance.this.db_name
+}

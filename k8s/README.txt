@@ -6,10 +6,18 @@ Despliegue tienda-perritos en EKS (namespace 'tienda')
 2) Aplicar namespace:
    kubectl apply -f namespace.yaml
 
-3) Aplicar recursos de base de datos:
-   kubectl apply -f mysql-secret.yaml
-   kubectl apply -f mysql-deployment.yaml
-   kubectl apply -f mysql-service.yaml
+3) La base de datos es un RDS MySQL en subnet privada (ver terraform/environments/eks).
+   Tras el "terraform apply", copiar el output "rds_address" en:
+     - backend-deployment.yaml (env DB_HOST)
+     - mysql-init-job.yaml (env DB_HOST)
+   Aplicar el secret con las credenciales (debe coincidir con db_username/db_password en terraform):
+   kubectl apply -f rds-secret.yaml
+
+   Poblar las tablas (solo la primera vez; si el Job ya existe no se debe reaplicar,
+   para no duplicar los datos de ejemplo):
+   kubectl apply -f mysql-init-configmap.yaml
+   kubectl apply -f mysql-init-job.yaml
+   kubectl wait --for=condition=complete job/mysql-init -n tienda --timeout=120s
 
 4) Aplicar backend:
    kubectl apply -f backend-deployment.yaml
@@ -23,7 +31,7 @@ Despliegue tienda-perritos en EKS (namespace 'tienda')
    kubectl get pods -n tienda
    kubectl get svc tienda-frontend -n tienda
 
-Copias el EXTERNAL-IP (DNS del ELB) â†’ lo abres en el navegadorâ†’ deberÃ­as ver la pÃ¡gina de Tienda de Perritos í ½í°¶
+Copias el EXTERNAL-IP (DNS del ELB) â†’ lo abres en el navegadorâ†’ deberÃ­as ver la pÃ¡gina de Tienda de Perritos ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 Nota: Si te da error, y sale el pod con estado Pending (valida correctamente la configuraciÃ³n de la Actividad 1 â€“ paso 4).
 

@@ -79,9 +79,39 @@ variable "image_tag" {
   default     = "eks-v1"
 }
 
-variable "mysql_root_password" {
-  description = "MySQL root password used by the sample app."
+variable "db_name" {
+  description = "Initial database name created on the RDS instance."
+  type        = string
+  default     = "tienda_perritos"
+}
+
+variable "db_username" {
+  description = "Master username for the RDS MySQL instance."
+  type        = string
+  default     = "admin"
+}
+
+variable "db_password" {
+  description = "Master password for the RDS MySQL instance. Must match the value in k8s/rds-secret.yaml (DB_PASSWORD) so the backend can authenticate."
   type        = string
   default     = "admin123"
   sensitive   = true
+}
+
+variable "db_instance_class" {
+  description = "Instance class for the RDS MySQL instance."
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "db_allocated_storage" {
+  description = "Allocated storage (GB) for the RDS instance."
+  type        = number
+  default     = 20
+}
+
+variable "db_engine_version" {
+  description = "MySQL engine version for the RDS instance."
+  type        = string
+  default     = "8.0"
 }

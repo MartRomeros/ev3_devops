@@ -3,6 +3,8 @@ locals {
   vpc_cidr    = var.vpc_cidr
   azs         = ["us-east-1a", "us-east-1b"]
 
+  # aws_db_instance identifiers reject underscores (unlike the EKS cluster name), so sanitize it here.
+  db_identifier = replace(local.name_prefix, "_", "-")
 }
 
 data "aws_caller_identity" "current" {}
@@ -65,8 +67,74 @@ module "nat_instance" {
   depends_on = [module.vpc]
 }
 
+resource "aws_db_subnet_group" "this" {
+  name       = "${local.name_prefix}-db-subnet-group"
+  subnet_ids = module.vpc.private_subnets
+
+  tags = {
+    Name = "${local.name_prefix}-db-subnet-group"
+  }
+}
+
+resource "aws_security_group" "rds" {
+  name_prefix = "${local.name_prefix}-rds-"
+  description = "Allows MySQL traffic from the EKS cluster to the RDS instance."
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    description     = "MySQL from EKS nodes/pods"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_eks_cluster.this.vpc_config[0].cluster_security_group_id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${local.name_prefix}-rds-sg"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_db_instance" "this" {
+  identifier = "${local.db_identifier}-db"
+
+  engine         = "mysql"
+  engine_version = var.db_engine_version
+  instance_class = var.db_instance_class
+
+  allocated_storage = var.db_allocated_storage
+  storage_type      = "gp3"
+
+  db_name  = var.db_name
+  username = var.db_username
+  password = var.db_password
+  port     = 3306
+
+  db_subnet_group_name   = aws_db_subnet_group.this.name
+  vpc_security_group_ids = [aws_security_group.rds.id]
+  publicly_accessible    = false # RDS vive en subnet privada, sin acceso desde internet
+
+  multi_az                = false
+  backup_retention_period = 1
+  skip_final_snapshot     = true # Laboratorio: no se requiere snapshot final al destruir
+  deletion_protection     = false
+  apply_immediately       = true
+
+  depends_on = [module.vpc]
+}
+
 resource "aws_ecr_repository" "app" {
-  for_each = toset(["frontend", "backend", "db"])
+  for_each = toset(["frontend", "backend"]) # "db" retirado: la BD ahora es RDS, no un pod con imagen propia
 
   name                 = "${local.name_prefix}-${each.key}"
   image_tag_mutability = "MUTABLE"

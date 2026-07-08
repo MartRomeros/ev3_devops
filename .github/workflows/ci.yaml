@@ -16,6 +16,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # La base de datos ahora es un RDS gestionado (ver terraform/environments/eks),
+      # ya no se construye/despliega una imagen Docker de MySQL. Se conserva la
+      # validación del esquema de db/init.sql como gate de calidad.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Validate DB schema (init.sql)
+        working-directory: ./db
+        run: |
+          npm ci
+          npm test
+
       # AWS Academy: actualizar los tres secrets antes de cada sesión (~4h expiry)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -39,11 +53,8 @@ jobs:
         run: |
           docker build -t $REGISTRY/eks-lab-ev3-frontend:$TAG -t $REGISTRY/eks-lab-ev3-frontend:latest ./frontend
           docker build -t $REGISTRY/eks-lab-ev3-backend:$TAG  -t $REGISTRY/eks-lab-ev3-backend:latest  ./backend
-          docker build -t $REGISTRY/eks-lab-ev3-db:$TAG       -t $REGISTRY/eks-lab-ev3-db:latest       ./db
 
           docker push $REGISTRY/eks-lab-ev3-frontend:$TAG
           docker push $REGISTRY/eks-lab-ev3-frontend:latest
           docker push $REGISTRY/eks-lab-ev3-backend:$TAG
           docker push $REGISTRY/eks-lab-ev3-backend:latest
-          docker push $REGISTRY/eks-lab-ev3-db:$TAG
-          docker push $REGISTRY/eks-lab-ev3-db:latest

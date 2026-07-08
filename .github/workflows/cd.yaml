@@ -55,16 +55,42 @@ jobs:
       - name: Configure kubectl
         run: aws eks update-kubeconfig --region us-east-1 --name eks-lab-ev3-eks
 
+      # Resuelve el endpoint del RDS dinámicamente (evita depender de que alguien
+      # edite a mano el placeholder tras cada "terraform apply").
+      - name: Resolve RDS endpoint
+        id: rds
+        run: |
+          RDS_HOST=$(aws rds describe-db-instances \
+            --db-instance-identifier eks-lab-ev3-db \
+            --query "DBInstances[0].Endpoint.Address" \
+            --output text)
+          echo "RDS endpoint: $RDS_HOST"
+          echo "host=$RDS_HOST" >> "$GITHUB_OUTPUT"
+
+      - name: Inject RDS endpoint into manifests
+        env:
+          RDS_HOST: ${{ steps.rds.outputs.host }}
+        run: |
+          sed -i "s|REEMPLAZAR_CON_rds_address|$RDS_HOST|g" k8s/backend-deployment.yaml k8s/mysql-init-job.yaml
+
       - name: Apply infrastructure manifests
         run: |
           kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/mysql-secret.yaml
-          kubectl apply -f k8s/mysql-deployment.yaml
-          kubectl apply -f k8s/mysql-service.yaml
+          kubectl apply -f k8s/rds-secret.yaml
           kubectl apply -f k8s/backend-service.yaml
           kubectl apply -f k8s/frontend-service.yaml
           kubectl apply -f k8s/backend-hpa.yaml
           kubectl apply -f k8s/frontend-hpa.yaml
+
+      # El Job corre una sola vez: si ya existe (de un deploy previo) no se vuelve a
+      # crear, para no reinsertar filas duplicadas en la tabla productos del RDS.
+      - name: Populate RDS with seed data (once)
+        run: |
+          kubectl get job mysql-init -n tienda 2>/dev/null || {
+            kubectl apply -f k8s/mysql-init-configmap.yaml
+            kubectl apply -f k8s/mysql-init-job.yaml
+            kubectl wait --for=condition=complete job/mysql-init -n tienda --timeout=120s
+          }
 
       # Crea los deployments si no existen, luego actualiza la imagen al SHA exacto
       - name: Deploy backend & frontend
