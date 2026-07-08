@@ -5,7 +5,11 @@ metadata:
   namespace: tienda
 spec:
   backoffLimit: 3
-  ttlSecondsAfterFinished: 3600
+  # Sin ttlSecondsAfterFinished a propósito: el pipeline usa
+  # `kubectl get job mysql-init` para saber si el seed ya corrió. Si el Job
+  # se autoborra, el siguiente deploy no lo detecta y vuelve a insertar los
+  # datos de ejemplo, duplicándolos. Si algún día quieres forzar un re-seed,
+  # bórralo a mano: kubectl delete job mysql-init -n tienda
   template:
     spec:
       restartPolicy: Never
